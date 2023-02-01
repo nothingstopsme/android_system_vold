@@ -50,7 +50,11 @@ bool IsSupported() {
 status_t Check(const std::string& source, bool trusted) {
     std::vector<std::string> cmd;
     cmd.push_back(kFsckPath);
-    cmd.push_back("-a");
+		//it looks like not all errors which might lead to data corruption are reported by f2fs, so "-a" can only fix some of them
+    //cmd.push_back("-a");
+    cmd.push_back("-f");
+    cmd.push_back("-p");
+    cmd.push_back("2");
     cmd.push_back(source);
 
     return ForkExecvp(cmd, trusted ? sFsckContext : sFsckUntrustedContext);

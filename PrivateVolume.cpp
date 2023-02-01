@@ -99,7 +99,7 @@ status_t PrivateVolume::doMount() {
     mPath = StringPrintf("/mnt/expand/%s", mFsUuid.c_str());
     setPath(mPath);
 
-    if (PrepareDir(mPath, 0700, AID_ROOT, AID_ROOT)) {
+    if (PrepareDir(mPath, 0701, AID_ROOT, AID_ROOT)) {
         PLOG(ERROR) << getId() << " failed to create mount point " << mPath;
         return -EIO;
     }
@@ -120,7 +120,7 @@ status_t PrivateVolume::doMount() {
 
     } else if (mFsType == "f2fs") {
         int res = f2fs::Check(mDmDevPath, true);
-        if (res == 0) {
+        if (res == 0 || res == 1) {
             LOG(DEBUG) << getId() << " passed filesystem check";
         } else {
             PLOG(ERROR) << getId() << " failed filesystem check";
@@ -136,6 +136,10 @@ status_t PrivateVolume::doMount() {
         LOG(ERROR) << getId() << " unsupported filesystem " << mFsType;
         return -EIO;
     }
+
+		//making sure the mount point has the right ownership/permission
+		chown(mPath.c_str(), AID_ROOT, AID_ROOT);
+		chmod(mPath.c_str(), 0701);
 
     RestoreconRecursive(mPath);
 

@@ -110,10 +110,20 @@ status_t EmulatedVolume::doMount() {
         return -errno;
     }
 
+		
     while (before == GetDevice(mFuseWrite)) {
         LOG(VERBOSE) << "Waiting for FUSE to spin up...";
         usleep(50000); // 50ms
     }
+
+		if (mRawPath.compare(0, 8, "/storage") != 0)
+		{
+			if(::mount(mFuseDefault.c_str(), getPath().c_str(), "auto", MS_BIND, "") == -1)
+			{
+				PLOG(ERROR) << "Failed to bind mount " << mFuseDefault << " to " << getPath();
+        return -errno;
+			}
+		}
 
     return OK;
 }
@@ -124,6 +134,10 @@ status_t EmulatedVolume::doUnmount(bool detach /* = false */) {
     // ENOTCONN until the unmount completes. This is an exotic and unusual
     // error code and might cause broken behaviour in applications.
     KillProcessesUsingPath(getPath());
+
+		if (mRawPath.compare(0, 8, "/storage") != 0)
+			::umount(getPath().c_str());
+
     ForceUnmount(mFuseDefault);
     ForceUnmount(mFuseRead);
     ForceUnmount(mFuseWrite);
